@@ -48,10 +48,12 @@ interface MailDisplayProps {
 export function MailDisplay({ mail }: MailDisplayProps) {
   const [suggestedReply, setSuggestedReply] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
     setSuggestedReply('');
+    setIsClient(true);
   }, [mail]);
 
   const handleGenerateReply = async () => {
@@ -200,7 +202,11 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             </div>
             <div className="ml-auto flex items-center gap-2 text-xs">
               <div className="text-muted-foreground">
-                {format(new Date(mail.date), 'PPpp')}
+                {isClient ? (
+                  format(new Date(mail.date), 'PPpp')
+                ) : (
+                  <span style={{ visibility: 'hidden' }}>loading...</span>
+                )}
               </div>
               {mail.category && (
                 <Badge
