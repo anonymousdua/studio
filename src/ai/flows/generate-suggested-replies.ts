@@ -1,4 +1,3 @@
-// src/ai/flows/generate-suggested-replies.ts
 'use server';
 
 /**
@@ -25,7 +24,9 @@ const GenerateSuggestedRepliesOutputSchema = z.object({
 export type GenerateSuggestedRepliesOutput = z.infer<typeof GenerateSuggestedRepliesOutputSchema>;
 
 // Define the main function
-export async function generateSuggestedReplies(input: GenerateSuggestedRepliesInput): Promise<GenerateSuggestedRepliesOutput> {
+export async function generateSuggestedReplies(
+  input: GenerateSuggestedRepliesInput
+): Promise<GenerateSuggestedRepliesOutput> {
   return generateSuggestedRepliesFlow(input);
 }
 
@@ -57,7 +58,9 @@ const generateSuggestedRepliesFlow = ai.defineFlow(
     outputSchema: GenerateSuggestedRepliesOutputSchema,
   },
   async input => {
-    const {output} = await suggestedRepliesPrompt(input);
+    const {output} = await suggestedRepliesPrompt(input, {
+      model: ai.model('gemini-1.5-flash-latest'),
+    });
     return output!;
   }
 );

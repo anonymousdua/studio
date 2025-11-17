@@ -57,7 +57,9 @@ const categorizeEmailFlow = ai.defineFlow(
     outputSchema: CategorizeEmailOutputSchema,
   },
   async input => {
-    const {output} = await categorizeEmailPrompt(input);
+    const {output} = await categorizeEmailPrompt(input, {
+      model: ai.model('gemini-1.5-flash-latest'),
+    });
     return output!;
   }
 );
