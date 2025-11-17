@@ -33,23 +33,6 @@ export async function categorizeEmail(input: CategorizeEmailInput): Promise<Cate
   return categorizeEmailFlow(input);
 }
 
-const categorizeEmailPrompt = ai.definePrompt({
-  name: 'categorizeEmailPrompt',
-  input: {schema: CategorizeEmailInputSchema},
-  output: {schema: CategorizeEmailOutputSchema},
-  prompt: `You are an AI email categorization expert. Your goal is to categorize emails into one of the following categories:
-
-- Interested: The email indicates interest in a product, service, or opportunity.
-- Meeting Booked: The email confirms that a meeting or appointment has been scheduled.
-- Not Interested: The email explicitly states a lack of interest or declines an offer.
-- Spam: The email is unsolicited, unwanted, and often irrelevant or inappropriate.
-- Out of Office: The email is an automated response indicating that the sender is away and unavailable.
-
-Analyze the email below and determine its category. Return the category as a raw JSON object.
-
-Email body: {{{emailBody}}}`,
-});
-
 const categorizeEmailFlow = ai.defineFlow(
   {
     name: 'categorizeEmailFlow',
@@ -57,13 +40,7 @@ const categorizeEmailFlow = ai.defineFlow(
     outputSchema: CategorizeEmailOutputSchema,
   },
   async input => {
-    const llmResponse = await ai.generate({
-      model: 'openrouter/tngtech/deepseek-r1t2-chimera',
-      prompt: {
-        role: 'user',
-        content: [
-          {
-            text: `You are an AI email categorization expert. Your goal is to categorize emails into one of the following categories:
+    const prompt = `You are an AI email categorization expert. Your goal is to categorize emails into one of the following categories:
 
 - Interested: The email indicates interest in a product, service, or opportunity.
 - Meeting Booked: The email confirms that a meeting or appointment has been scheduled.
@@ -73,20 +50,42 @@ const categorizeEmailFlow = ai.defineFlow(
 
 Analyze the email below and determine its category. Return ONLY the raw JSON object with the "category" key.
 
-Email body: ${input.emailBody}`,
-          },
-        ],
+Email body: ${input.emailBody}`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'http://localhost:9002', // Replace with your site URL in production
+        'X-Title': 'MailWise AI', // Replace with your site title in production
+        'Content-Type': 'application/json',
       },
-      output: {
-        schema: CategorizeEmailOutputSchema,
-      },
+      body: JSON.stringify({
+        model: 'tngtech/deepseek-r1t2-chimera:free',
+        messages: [{role: 'user', content: prompt}],
+      }),
     });
 
-    const outputText = llmResponse.text();
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('OpenRouter API request failed:', errorBody);
+      throw new Error(`OpenRouter API request failed with status ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    const outputText = responseData.choices[0]?.message?.content;
+
+    if (!outputText) {
+      console.error("No content in OpenRouter response:", responseData);
+      throw new Error("AI returned no content.");
+    }
+    
     try {
-      return JSON.parse(outputText);
+      // The model might return a markdown code block. Let's strip it.
+      const cleanedJson = outputText.replace(/```json\n/g, '').replace(/\n```/g, '');
+      return CategorizeEmailOutputSchema.parse(JSON.parse(cleanedJson));
     } catch (e) {
-      console.error("Failed to parse JSON from LLM:", outputText);
+      console.error("Failed to parse JSON from LLM:", outputText, e);
       throw new Error("AI returned invalid JSON.");
     }
   }
