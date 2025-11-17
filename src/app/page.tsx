@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 
-import { accounts, mails, folders } from '@/lib/data';
+import { accounts, folders } from '@/lib/data';
 import type { Mail } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -27,12 +27,39 @@ import { MailList } from '@/components/mail/mail-list';
 import { MailDisplay } from '@/components/mail/mail-display';
 import { MailWiseAiLogo } from '@/components/mail-wise-ai-logo';
 import { UserNav } from '@/components/user-nav';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MailPage() {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [mails, setMails] = React.useState<Mail[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [selectedMailId, setSelectedMailId] = React.useState<string | null>(
-    mails[0].id
+    null
   );
+
+  React.useEffect(() => {
+    async function fetchMails() {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/emails');
+        if (!response.ok) {
+          throw new Error('Failed to fetch emails');
+        }
+        const data: Mail[] = await response.json();
+        setMails(data);
+        if (data.length > 0) {
+          setSelectedMailId(data[0].id);
+        }
+      } catch (error) {
+        console.error(error);
+        // You might want to show a toast notification to the user here
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchMails();
+  }, []);
+
   const selectedMail = mails.find((m) => m.id === selectedMailId) ?? null;
 
   return (
@@ -76,11 +103,20 @@ export default function MailPage() {
           </div>
 
           <div className="w-full max-w-sm border-r xl:max-w-md">
-            <MailList
-              mails={mails}
-              onSelectMail={(mail) => setSelectedMailId(mail.id)}
-              selectedMailId={selectedMailId}
-            />
+            {isLoading ? (
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ) : (
+              <MailList
+                mails={mails}
+                onSelectMail={(mail) => setSelectedMailId(mail.id)}
+                selectedMailId={selectedMailId}
+              />
+            )}
           </div>
 
           <div className="flex-1">
