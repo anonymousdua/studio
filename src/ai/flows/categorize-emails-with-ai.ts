@@ -45,7 +45,7 @@ const categorizeEmailPrompt = ai.definePrompt({
 - Spam: The email is unsolicited, unwanted, and often irrelevant or inappropriate.
 - Out of Office: The email is an automated response indicating that the sender is away and unavailable.
 
-Analyze the email below and determine its category. Return the category in JSON format.
+Analyze the email below and determine its category. Return the category as a raw JSON object.
 
 Email body: {{{emailBody}}}`,
 });
@@ -57,9 +57,37 @@ const categorizeEmailFlow = ai.defineFlow(
     outputSchema: CategorizeEmailOutputSchema,
   },
   async input => {
-    const {output} = await categorizeEmailPrompt(input, {
-      model: ai.model('gemini-1.5-flash-latest'),
+    const llmResponse = await ai.generate({
+      model: 'openrouter/tngtech/deepseek-r1t2-chimera',
+      prompt: {
+        role: 'user',
+        content: [
+          {
+            text: `You are an AI email categorization expert. Your goal is to categorize emails into one of the following categories:
+
+- Interested: The email indicates interest in a product, service, or opportunity.
+- Meeting Booked: The email confirms that a meeting or appointment has been scheduled.
+- Not Interested: The email explicitly states a lack of interest or declines an offer.
+- Spam: The email is unsolicited, unwanted, and often irrelevant or inappropriate.
+- Out of Office: The email is an automated response indicating that the sender is away and unavailable.
+
+Analyze the email below and determine its category. Return ONLY the raw JSON object with the "category" key.
+
+Email body: ${input.emailBody}`,
+          },
+        ],
+      },
+      output: {
+        schema: CategorizeEmailOutputSchema,
+      },
     });
-    return output!;
+
+    const outputText = llmResponse.text();
+    try {
+      return JSON.parse(outputText);
+    } catch (e) {
+      console.error("Failed to parse JSON from LLM:", outputText);
+      throw new Error("AI returned invalid JSON.");
+    }
   }
 );
