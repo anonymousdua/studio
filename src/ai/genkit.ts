@@ -1,12 +1,12 @@
 import {genkit, GenkitError} from 'genkit';
-import {defineModel, modelRef, type GenerationCommon} from 'genkit/model';
+import {defineModel} from 'genkit/model';
 import {definePlugin, type Plugin} from 'genkit/plugin';
 
 const openRouterPlugin: Plugin = definePlugin(
   {
     name: 'openrouter',
   },
-  (options) => {
+  async () => {
     return {
       models: [
         defineModel(
@@ -59,8 +59,7 @@ const openRouterPlugin: Plugin = definePlugin(
               }
 
               if (streamer) {
-                // Handling streaming response is complex and not fully implemented here
-                // This is a placeholder for basic non-streaming functionality
+                // This is a simplified streaming implementation. A real implementation would parse the stream.
                 const data = await response.json();
                 if (!data.choices || data.choices.length === 0) {
                   return { candidates: [], usage: {} };
