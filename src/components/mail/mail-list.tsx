@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import type { Mail } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,12 @@ export function MailList({
   onSelectMail,
   selectedMailId,
 }: MailListProps) {
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-2 p-4 pt-2">
@@ -45,9 +52,13 @@ export function MailList({
                       : 'text-muted-foreground'
                   )}
                 >
-                  {formatDistanceToNow(new Date(mail.date), {
-                    addSuffix: true,
-                  })}
+                  {isClient ? (
+                    formatDistanceToNow(new Date(mail.date), {
+                      addSuffix: true,
+                    })
+                  ) : (
+                    <span style={{ visibility: 'hidden' }}>loading...</span>
+                  )}
                 </div>
               </div>
               <div className="text-xs font-medium">{mail.subject}</div>
