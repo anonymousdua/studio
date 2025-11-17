@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Label } from '@/componentsg/ui/label';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
@@ -98,7 +98,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
     }
   };
 
-toclassName = (
+  const getCategoryBadgeClassName = (
     category: Mail['category']
   ): string => {
     if (category === 'Interested') return 'bg-green-500/20 text-green-700 border-green-500/30';
